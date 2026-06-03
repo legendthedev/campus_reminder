@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "939759278329",
+    "project_id": "campus-reminder-76b1c",
+    "storage_bucket": "campus-reminder-76b1c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:939759278329:android:d9c438d1252de81d65ea28",
+        "android_client_info": {
+          "package_name": "com.example.campus_reminder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTCL0kUOVjfbS6LzlCwspskQvUHTHX5mw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
