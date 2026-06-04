@@ -1,9 +1,9 @@
 import uuid
 import enum
-from sqlalchemy import Column, String, ForeignKey, DateTime, Time, Enum, func
+from sqlalchemy import Column, String, ForeignKey, DateTime, Time, Enum as SAEnum, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.models.base import Base
 
 
 class DayOfWeek(str, enum.Enum):
@@ -19,7 +19,7 @@ class TimetableEntry(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     course_id = Column(UUID(as_uuid=True), ForeignKey("courses.id"), nullable=False)
-    day_of_week = Column(Enum(DayOfWeek), nullable=False)
+    day_of_week = Column(SAEnum(DayOfWeek, name="dayofweek"), nullable=False)
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     room_name = Column(String, nullable=False)

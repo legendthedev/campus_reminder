@@ -1,12 +1,10 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
-from datetime import date
 
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://campus_user:campus_pass@localhost:5432/campus_reminder_db"
     REDIS_URL: str = "redis://localhost:6379/0"
-    SECRET_KEY: str = "change-this-secret"
+    SECRET_KEY: str = "change-this-secret-key-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -22,5 +20,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
+
 
 settings = Settings()

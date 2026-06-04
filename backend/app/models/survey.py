@@ -1,9 +1,10 @@
 import uuid
 import enum
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey, DateTime, Date, Enum, Text, UniqueConstraint, func
+from sqlalchemy import Column, Integer, Boolean, ForeignKey, DateTime, Date
+from sqlalchemy import Enum as SAEnum, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.models.base import Base
 
 
 class LocationPreference(str, enum.Enum):
@@ -25,7 +26,7 @@ class SurveyResponse(Base):
     q1_punctuality_rating = Column(Integer, nullable=False)
     q2_missed_classes = Column(Integer, nullable=False)
     q3_reminder_helpful = Column(Boolean, nullable=False)
-    q4_location_preference = Column(Enum(LocationPreference), nullable=False)
+    q4_location_preference = Column(SAEnum(LocationPreference, name="locationpreference"), nullable=False)
     q5_privacy_comfort = Column(Integer, nullable=False)
     q6_open_feedback = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -1,9 +1,10 @@
 import uuid
 import enum
-from sqlalchemy import Column, String, Float, Boolean, ForeignKey, DateTime, Date, Enum, func
+from sqlalchemy import Column, String, Float, Boolean, ForeignKey, DateTime, Date
+from sqlalchemy import Enum as SAEnum, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.models.base import Base
 
 
 class ReminderType(str, enum.Enum):
@@ -39,7 +40,7 @@ class ReminderLog(Base):
     student_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     timetable_entry_id = Column(UUID(as_uuid=True), ForeignKey("timetable_entries.id"), nullable=False)
     course_id = Column(UUID(as_uuid=True), ForeignKey("courses.id"), nullable=False)
-    reminder_type = Column(Enum(ReminderType), nullable=False)
+    reminder_type = Column(SAEnum(ReminderType, name="remindertype"), nullable=False)
     was_on_campus = Column(Boolean, nullable=False)
     student_latitude = Column(Float, nullable=True)
     student_longitude = Column(Float, nullable=True)
@@ -60,7 +61,7 @@ class Notification(Base):
     recipient_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
     body = Column(String, nullable=False)
-    type = Column(Enum(NotificationType), nullable=False)
+    type = Column(SAEnum(NotificationType, name="notificationtype"), nullable=False)
     is_read = Column(Boolean, default=False)
     sent_at = Column(DateTime(timezone=True), server_default=func.now())
 

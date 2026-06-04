@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -83,8 +87,8 @@ async def seed_database():
     import random
 
     async with AsyncSessionLocal() as db:
-        count = await db.execute(select(func.count(User.id)))
-        if count.scalar() > 0:
+        count_result = await db.execute(select(func.count(User.id)))
+        if count_result.scalar() > 0:
             return
         logger.info("Seeding database...")
 
@@ -96,11 +100,11 @@ async def seed_database():
                      password_hash=get_password_hash("admin123"), role=UserRole.admin)
 
         students_data = [
-            ("Chidi Nwosu", "chidi@student.edu", "STU001", Platform.android),
-            ("Amaka Obi", "amaka@student.edu", "STU002", Platform.ios),
-            ("Emeka Chukwu", "emeka@student.edu", "STU003", Platform.android),
-            ("Fatima Bello", "fatima@student.edu", "STU004", Platform.ios),
-            ("Tunde Adeleke", "tunde@student.edu", "STU005", Platform.android),
+            ("Chidi Nwosu",   "chidi@student.edu",  "STU001", Platform.android),
+            ("Amaka Obi",     "amaka@student.edu",   "STU002", Platform.ios),
+            ("Emeka Chukwu",  "emeka@student.edu",   "STU003", Platform.android),
+            ("Fatima Bello",  "fatima@student.edu",  "STU004", Platform.ios),
+            ("Tunde Adeleke", "tunde@student.edu",   "STU005", Platform.android),
         ]
         students = []
         for name, email, sid, plat in students_data:
@@ -113,9 +117,9 @@ async def seed_database():
             db.add(obj)
         await db.flush()
 
-        cs401 = Course(course_code="CS401", course_name="Mobile Computing", lecturer_id=lecturer1.id)
-        cs302 = Course(course_code="CS302", course_name="Database Systems", lecturer_id=lecturer2.id)
-        cs205 = Course(course_code="CS205", course_name="Web Development", lecturer_id=lecturer1.id)
+        cs401 = Course(course_code="CS401", course_name="Mobile Computing",    lecturer_id=lecturer1.id)
+        cs302 = Course(course_code="CS302", course_name="Database Systems",    lecturer_id=lecturer2.id)
+        cs205 = Course(course_code="CS205", course_name="Web Development",     lecturer_id=lecturer1.id)
         for c in [cs401, cs302, cs205]:
             db.add(c)
         await db.flush()
@@ -128,7 +132,8 @@ async def seed_database():
         for sid, cid in enrollments:
             db.add(CourseEnrollment(student_id=sid, course_id=cid))
 
-        timetable_entries = [
+        from app.models.timetable import DayOfWeek
+        entries = [
             TimetableEntry(course_id=cs401.id, day_of_week=DayOfWeek.monday,
                            start_time=time(10, 0), end_time=time(12, 0),
                            room_name="Lab 101", building_name="CS Block"),
@@ -145,7 +150,7 @@ async def seed_database():
                            start_time=time(9, 0), end_time=time(12, 0),
                            room_name="Room 103", building_name="CS Block"),
         ]
-        for e in timetable_entries:
+        for e in entries:
             db.add(e)
 
         geofence = CampusGeofence(
@@ -158,49 +163,42 @@ async def seed_database():
         db.add(geofence)
         await db.flush()
 
+        from app.core.config import settings as cfg
+        study_start = date.fromisoformat(cfg.STUDY_START_DATE)
+        day_map = {DayOfWeek.monday: 0, DayOfWeek.tuesday: 1, DayOfWeek.wednesday: 2,
+                   DayOfWeek.thursday: 3, DayOfWeek.friday: 4}
         course_student_map = {
             cs401.id: students,
             cs302.id: students[:3],
             cs205.id: students[2:5],
         }
-        day_map = {
-            DayOfWeek.monday: 0, DayOfWeek.tuesday: 1,
-            DayOfWeek.wednesday: 2, DayOfWeek.thursday: 3,
-            DayOfWeek.friday: 4,
-        }
 
-        study_start = date.fromisoformat(settings.STUDY_START_DATE)
         for week_num in range(3):
-            week_start_offset = week_num * 7
-            for entry in timetable_entries:
+            for entry in entries:
                 day_offset = day_map[entry.day_of_week]
-                class_date = study_start + timedelta(days=week_start_offset + day_offset)
-                enrolled_students = course_student_map.get(entry.course_id, [])
-                for student in enrolled_students:
+                class_date = study_start + timedelta(days=week_num * 7 + day_offset)
+                for student in course_student_map.get(entry.course_id, []):
                     on_campus = random.random() < 0.7
                     distance = random.uniform(0, 80) if on_campus else random.uniform(150, 800)
-                    log = ReminderLog(
+                    db.add(ReminderLog(
                         student_id=student.id,
                         timetable_entry_id=entry.id,
                         course_id=entry.course_id,
                         reminder_type=ReminderType.on_campus if on_campus else ReminderType.off_campus,
                         was_on_campus=on_campus,
-                        student_latitude=settings.CAMPUS_GEOFENCE_LAT + random.uniform(-0.001, 0.001),
-                        student_longitude=settings.CAMPUS_GEOFENCE_LNG + random.uniform(-0.001, 0.001),
+                        student_latitude=cfg.CAMPUS_GEOFENCE_LAT + random.uniform(-0.001, 0.001),
+                        student_longitude=cfg.CAMPUS_GEOFENCE_LNG + random.uniform(-0.001, 0.001),
                         distance_metres=round(distance, 1),
                         fcm_delivered=random.random() < 0.95,
                         class_date=class_date,
-                    )
-                    db.add(log)
+                    ))
 
             week_start_date = study_start + timedelta(weeks=week_num)
             for idx, student in enumerate(students):
-                feedback_map = {
-                    1: {1: "The reminders are very helpful, especially when I'm already on campus.", 3: None},
-                    2: {3: "I would prefer the app not to track location when I'm not near campus.", 0: None},
-                }
-                q6 = feedback_map.get(week_num + 1, {}).get(idx)
-                response = SurveyResponse(
+                q6_map = {(1, 1): "The reminders are very helpful, especially on campus.",
+                          (2, 3): "I prefer not to be tracked when far from campus."}
+                q6 = q6_map.get((week_num + 1, idx))
+                db.add(SurveyResponse(
                     student_id=student.id,
                     survey_week=week_num + 1,
                     week_start_date=week_start_date,
@@ -208,13 +206,13 @@ async def seed_database():
                     q2_missed_classes=random.randint(0, 2),
                     q3_reminder_helpful=random.random() < 0.8,
                     q4_location_preference=random.choices(
-                        [LocationPreference.on_campus_only, LocationPreference.always, LocationPreference.never],
-                        weights=[0.6, 0.3, 0.1]
-                    )[0],
+                        [LocationPreference.on_campus_only,
+                         LocationPreference.always,
+                         LocationPreference.never],
+                        weights=[0.6, 0.3, 0.1])[0],
                     q5_privacy_comfort=random.randint(3, 5),
                     q6_open_feedback=q6,
-                )
-                db.add(response)
+                ))
 
         await db.commit()
         logger.info("Database seeded successfully")

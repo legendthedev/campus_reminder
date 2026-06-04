@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
-from app.core.database import Base
+from app.models.base import Base
 
 
 class CampusGeofence(Base):

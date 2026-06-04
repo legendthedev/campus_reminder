@@ -1,13 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
+from app.models.base import Base
 
 engine = create_async_engine(settings.DATABASE_URL, echo=False)
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 async def get_db():
@@ -19,6 +15,7 @@ async def get_db():
 
 
 async def create_tables():
+    # Import every model exactly once here — nowhere else should bulk-import models
+    from app.models import user, course, timetable, campus_geofence, reminder_log, survey  # noqa: F401
     async with engine.begin() as conn:
-        from app.models import user, course, timetable, reminder_log, notification, campus_geofence, survey
         await conn.run_sync(Base.metadata.create_all)
