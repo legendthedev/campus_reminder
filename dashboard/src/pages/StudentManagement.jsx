@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { Modal, Drawer } from '../components/shared/Modal';
+import { inputStyle } from '../components/shared/FormField';
+import { btnStyle } from '../components/shared/styles';
+import { Muted } from '../components/shared/Card';
 
 export default function StudentManagement() {
   const [students, setStudents] = useState([]);
@@ -50,7 +54,7 @@ export default function StudentManagement() {
     <div style={{ padding: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0, color: '#1565C0' }}>Student management</h2>
-        <button onClick={() => setShowCreate(true)} style={btn('#1565C0')}>+ New student</button>
+        <button onClick={() => setShowCreate(true)} style={btnStyle('#1565C0')}>+ New student</button>
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
@@ -89,8 +93,8 @@ export default function StudentManagement() {
                   </span>
                 </td>
                 <td style={{ padding: '10px 14px' }}>
-                  <button onClick={() => openDetail(s)} style={btn('#1565C0', true)}>View</button>
-                  {s.is_active && <button onClick={() => deactivate(s.id)} style={{ ...btn('#C62828', true), marginLeft: 6 }}>Deactivate</button>}
+                  <button onClick={() => openDetail(s)} style={btnStyle('#1565C0', true)}>View</button>
+                  {s.is_active && <button onClick={() => deactivate(s.id)} style={{ ...btnStyle('#C62828', true), marginLeft: 6 }}>Deactivate</button>}
                 </td>
               </tr>
             ))}
@@ -126,17 +130,17 @@ export default function StudentManagement() {
       )}
 
       {showCreate && (
-        <Modal title="Create student" onClose={() => setShowCreate(false)}>
+        <Modal title="Create student" onClose={() => setShowCreate(false)} width={440}>
           {['full_name','email','password','student_id'].map(f => (
             <div key={f} style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 4 }}>{f.replace('_',' ')}</label>
               <input value={newForm[f]} onChange={e => setNewForm({...newForm, [f]: e.target.value})}
-                style={{ width: '100%', padding: '9px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 14, boxSizing: 'border-box' }} />
+                style={inputStyle} />
             </div>
           ))}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button onClick={() => setShowCreate(false)} style={btn('#888', true)}>Cancel</button>
-            <button onClick={createStudent} style={btn('#1565C0')}>Create</button>
+            <button onClick={() => setShowCreate(false)} style={btnStyle('#888', true)}>Cancel</button>
+            <button onClick={createStudent} style={btnStyle('#1565C0')}>Create</button>
           </div>
         </Modal>
       )}
@@ -144,34 +148,4 @@ export default function StudentManagement() {
   );
 }
 
-const btn = (bg, small) => ({ background: bg, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', padding: small ? '5px 12px' : '9px 20px', fontWeight: 600, fontSize: small ? 12 : 14 });
 const Section = ({ title, children }) => <div style={{ marginBottom: 20 }}><h4 style={{ margin: '0 0 8px', color: '#555' }}>{title}</h4>{children}</div>;
-const Muted = ({ children }) => <p style={{ color: '#bbb', fontSize: 13 }}>{children}</p>;
-
-function Drawer({ title, onClose, children }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}>
-      <div style={{ background: '#fff', width: 480, height: '100%', overflowY: 'auto', padding: 28, boxShadow: '-4px 0 20px rgba(0,0,0,0.15)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 16 }}>{title}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer' }}>×</button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Modal({ title, onClose, children }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 440, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ margin: 0 }}>{title}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}

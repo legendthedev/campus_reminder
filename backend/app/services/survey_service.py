@@ -2,21 +2,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.survey import SurveyResponse
 from app.schemas.course import SurveySubmit
-from app.core.config import settings
-from datetime import date, timedelta
+from app.utils.week_helpers import get_current_week_number, get_week_start_date
+from app.utils.db_helpers import create_and_refresh
 import uuid
-
-
-def get_current_week_number() -> int:
-    study_start = date.fromisoformat(settings.STUDY_START_DATE)
-    today = date.today()
-    delta = today - study_start
-    return max(1, delta.days // 7 + 1)
-
-
-def get_week_start_date(week_number: int) -> date:
-    study_start = date.fromisoformat(settings.STUDY_START_DATE)
-    return study_start + timedelta(weeks=week_number - 1)
 
 
 async def submit_survey(db: AsyncSession, student_id: uuid.UUID, data: SurveySubmit):
@@ -38,10 +26,7 @@ async def submit_survey(db: AsyncSession, student_id: uuid.UUID, data: SurveySub
         week_start_date=week_start,
         **data.model_dump(),
     )
-    db.add(response)
-    await db.commit()
-    await db.refresh(response)
-    return response
+    return await create_and_refresh(db, response)
 
 
 async def get_student_surveys(db: AsyncSession, student_id: uuid.UUID):

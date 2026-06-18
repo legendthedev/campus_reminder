@@ -8,6 +8,7 @@ from app.models.reminder_log import ReminderLog
 from app.schemas.user import UserOut, UserUpdate
 from app.services.survey_service import get_student_surveys
 from app.services.timetable_service import get_student_timetable
+from app.utils.db_helpers import get_or_404, apply_updates
 from app.core.redis import get_location
 from typing import List
 import uuid
@@ -26,21 +27,13 @@ async def list_students(
 
 @router.get("/{student_id}", response_model=UserOut)
 async def get_student(student_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    result = await db.execute(select(User).where(User.id == student_id))
-    student = result.scalar_one_or_none()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
-    return student
+    return await get_or_404(db, User, student_id, "Student not found")
 
 
 @router.put("/{student_id}", response_model=UserOut)
 async def update_student(student_id: uuid.UUID, data: UserUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    result = await db.execute(select(User).where(User.id == student_id))
-    student = result.scalar_one_or_none()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(student, k, v)
+    student = await get_or_404(db, User, student_id, "Student not found")
+    apply_updates(student, data)
     await db.commit()
     await db.refresh(student)
     return student
@@ -48,10 +41,7 @@ async def update_student(student_id: uuid.UUID, data: UserUpdate, db: AsyncSessi
 
 @router.delete("/{student_id}")
 async def delete_student(student_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(require_lecturer_or_admin)):
-    result = await db.execute(select(User).where(User.id == student_id))
-    student = result.scalar_one_or_none()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
+    student = await get_or_404(db, User, student_id, "Student not found")
     student.is_active = False
     await db.commit()
     return {"message": "Student deactivated"}

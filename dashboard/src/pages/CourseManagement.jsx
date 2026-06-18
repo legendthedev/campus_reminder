@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { Modal } from '../components/shared/Modal';
+import { Field, inputStyle } from '../components/shared/FormField';
+import { btnStyle } from '../components/shared/styles';
 
 export default function CourseManagement() {
   const [courses, setCourses] = useState([]);
@@ -46,7 +49,7 @@ export default function CourseManagement() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0, color: '#1565C0' }}>Course management</h2>
         <button onClick={() => { setForm({ course_code:'', course_name:'', lecturer_id:'' }); setEditId(null); setShowModal(true); }}
-          style={btn('#1565C0')}>+ New course</button>
+          style={btnStyle('#1565C0')}>+ New course</button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -59,8 +62,8 @@ export default function CourseManagement() {
                 <strong style={{ fontSize: 16 }}>{c.course_name}</strong>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => openEdit(c)} style={btn('#555', true)}>Edit</button>
-                <button onClick={() => del(c.id)} style={btn('#C62828', true)}>Delete</button>
+                <button onClick={() => openEdit(c)} style={btnStyle('#555', true)}>Edit</button>
+                <button onClick={() => del(c.id)} style={btnStyle('#C62828', true)}>Delete</button>
               </div>
             </div>
           </div>
@@ -68,34 +71,24 @@ export default function CourseManagement() {
       </div>
 
       {showModal && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200 }}>
-          <div style={{ background:'#fff', borderRadius:12, padding:28, width:440, boxShadow:'0 8px 32px rgba(0,0,0,0.2)' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-              <h3 style={{ margin:0 }}>{editId ? 'Edit course' : 'New course'}</h3>
-              <button onClick={() => setShowModal(false)} style={{ background:'none', border:'none', fontSize:20, cursor:'pointer' }}>×</button>
-            </div>
-            {[['Course code','course_code'],['Course name','course_name']].map(([label, key]) => (
-              <div key={key} style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, marginBottom:4 }}>{label}</label>
-                <input value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})}
-                  style={{ width:'100%', padding:'9px 10px', border:'1px solid #ddd', borderRadius:7, fontSize:14, boxSizing:'border-box' }} />
-              </div>
-            ))}
-            <div style={{ marginBottom:14 }}>
-              <label style={{ display:'block', fontSize:13, fontWeight:600, marginBottom:4 }}>Lecturer ID</label>
-              <input value={form.lecturer_id} onChange={e => setForm({...form, lecturer_id:e.target.value})}
-                placeholder="Paste lecturer UUID"
-                style={{ width:'100%', padding:'9px 10px', border:'1px solid #ddd', borderRadius:7, fontSize:14, boxSizing:'border-box' }} />
-            </div>
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:16 }}>
-              <button onClick={() => setShowModal(false)} style={btn('#888',true)}>Cancel</button>
-              <button onClick={save} style={btn('#1565C0')}>Save</button>
-            </div>
+        <Modal title={editId ? 'Edit course' : 'New course'} onClose={() => setShowModal(false)}>
+          {[['Course code','course_code'],['Course name','course_name']].map(([label, key]) => (
+            <Field key={key} label={label}>
+              <input value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})} style={inputStyle} />
+            </Field>
+          ))}
+          <Field label="Lecturer ID">
+            <input value={form.lecturer_id} onChange={e => setForm({...form, lecturer_id:e.target.value})}
+              placeholder="Paste lecturer UUID" style={inputStyle} />
+          </Field>
+          <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:16 }}>
+            <button onClick={() => setShowModal(false)} style={btnStyle('#888',true)}>Cancel</button>
+            <button onClick={save} style={btnStyle('#1565C0')}>Save</button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
 }
 
-const btn = (bg, small) => ({ background: bg, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', padding: small ? '5px 12px' : '9px 20px', fontWeight: 600, fontSize: small ? 12 : 14 });
+

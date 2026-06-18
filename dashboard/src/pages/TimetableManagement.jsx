@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { Modal } from '../components/shared/Modal';
+import { Field, inputStyle } from '../components/shared/FormField';
+import { btnStyle } from '../components/shared/styles';
 
 const DAYS = ['monday','tuesday','wednesday','thursday','friday'];
 const DAY_LABELS = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri' };
@@ -130,30 +133,4 @@ export default function TimetableManagement() {
   );
 }
 
-function Modal({ title, onClose, children }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div style={{ background: '#fff', borderRadius: 12, padding: 28, width: 480,
-        maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ margin: 0 }}>{title}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
 
-function Field({ label, children }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: '#444' }}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-const inputStyle = { width: '100%', padding: '9px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 14, boxSizing: 'border-box' };
-const btnStyle = (bg, small) => ({ background: bg, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', padding: small ? '6px 14px' : '9px 20px', fontWeight: 600, fontSize: small ? 13 : 14 });

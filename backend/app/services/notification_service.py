@@ -4,6 +4,7 @@ from app.models.reminder_log import Notification, NotificationType
 from app.models.user import User
 from pyfcm import FCMNotification
 from app.core.config import settings
+from app.utils.db_helpers import create_and_refresh
 import uuid
 import logging
 
@@ -46,10 +47,7 @@ async def save_notification(
         body=body,
         type=notif_type,
     )
-    db.add(notif)
-    await db.commit()
-    await db.refresh(notif)
-    return notif
+    return await create_and_refresh(db, notif)
 
 
 async def broadcast_notification(db: AsyncSession, title: str, body: str, target: str = "all"):

@@ -23,12 +23,14 @@ from app.services.geofence_service import check_position, get_active_geofence
 from app.services.notification_service import save_notification, broadcast_notification
 from app.services.survey_service import (
     submit_survey, get_all_surveys, get_student_surveys,
-    check_submitted, get_current_week_number, get_week_start_date,
+    check_submitted,
 )
+from app.utils.week_helpers import get_current_week_number, get_week_start_date
 from app.services.analytics_service import (
     get_punctuality_summary, get_weekly_trend, get_reminder_effectiveness,
     get_geofence_stats, get_platform_breakdown,
 )
+from app.utils.db_helpers import get_or_404, apply_updates, create_and_refresh
 from typing import List
 import uuid
 from datetime import date
@@ -47,29 +49,18 @@ async def list_courses(db: AsyncSession = Depends(get_db), current_user=Depends(
 @courses_router.post("", response_model=CourseOut)
 async def create_course(data: CourseCreate, db: AsyncSession = Depends(get_db), current_user=Depends(require_lecturer_or_admin)):
     course = Course(**data.model_dump())
-    db.add(course)
-    await db.commit()
-    await db.refresh(course)
-    return course
+    return await create_and_refresh(db, course)
 
 
 @courses_router.get("/{course_id}", response_model=CourseOut)
 async def get_course(course_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    result = await db.execute(select(Course).where(Course.id == course_id))
-    c = result.scalar_one_or_none()
-    if not c:
-        raise HTTPException(404, "Course not found")
-    return c
+    return await get_or_404(db, Course, course_id, "Course not found")
 
 
 @courses_router.put("/{course_id}", response_model=CourseOut)
 async def update_course(course_id: uuid.UUID, data: CourseUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(require_lecturer_or_admin)):
-    result = await db.execute(select(Course).where(Course.id == course_id))
-    c = result.scalar_one_or_none()
-    if not c:
-        raise HTTPException(404, "Course not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(c, k, v)
+    c = await get_or_404(db, Course, course_id, "Course not found")
+    apply_updates(c, data)
     await db.commit()
     await db.refresh(c)
     return c
@@ -77,10 +68,7 @@ async def update_course(course_id: uuid.UUID, data: CourseUpdate, db: AsyncSessi
 
 @courses_router.delete("/{course_id}")
 async def delete_course(course_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(require_admin)):
-    result = await db.execute(select(Course).where(Course.id == course_id))
-    c = result.scalar_one_or_none()
-    if not c:
-        raise HTTPException(404, "Course not found")
+    c = await get_or_404(db, Course, course_id, "Course not found")
     await db.delete(c)
     await db.commit()
     return {"message": "Deleted"}
@@ -141,11 +129,7 @@ async def add_timetable(data: TimetableCreate, db: AsyncSession = Depends(get_db
 @timetable_router.get("/{entry_id}")
 async def get_entry(entry_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     from app.models.timetable import TimetableEntry
-    result = await db.execute(select(TimetableEntry).where(TimetableEntry.id == entry_id))
-    e = result.scalar_one_or_none()
-    if not e:
-        raise HTTPException(404, "Entry not found")
-    return e
+    return await get_or_404(db, TimetableEntry, entry_id, "Entry not found")
 
 
 @timetable_router.put("/{entry_id}")
@@ -178,20 +162,13 @@ async def list_geofences(db: AsyncSession = Depends(get_db), current_user=Depend
 @geofence_router.post("", response_model=GeofenceOut)
 async def create_geofence(data: GeofenceCreate, db: AsyncSession = Depends(get_db), current_user=Depends(require_admin)):
     g = CampusGeofence(**data.model_dump())
-    db.add(g)
-    await db.commit()
-    await db.refresh(g)
-    return g
+    return await create_and_refresh(db, g)
 
 
 @geofence_router.put("/{geofence_id}", response_model=GeofenceOut)
 async def update_geofence(geofence_id: uuid.UUID, data: GeofenceUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(require_admin)):
-    result = await db.execute(select(CampusGeofence).where(CampusGeofence.id == geofence_id))
-    g = result.scalar_one_or_none()
-    if not g:
-        raise HTTPException(404, "Geofence not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(g, k, v)
+    g = await get_or_404(db, CampusGeofence, geofence_id, "Geofence not found")
+    apply_updates(g, data)
     await db.commit()
     await db.refresh(g)
     return g

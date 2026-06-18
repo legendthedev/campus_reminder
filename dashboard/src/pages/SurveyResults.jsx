@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { Q1DistributionChart, Q3PieChart, Q4PreferenceChart, Q5ComfortChart } from '../components/SurveyChart';
+import { Card, StatPill } from '../components/shared/Card';
+import { btnStyle } from '../components/shared/styles';
 
 export default function SurveyResults() {
   const [allResponses, setAllResponses] = useState([]);
@@ -59,7 +61,7 @@ export default function SurveyResults() {
             style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14 }}>
             {weekOptions.map(w => <option key={w} value={w}>Week {w}</option>)}
           </select>
-          <button onClick={exportCsv} style={btn('#43A047')}>⬇ Export CSV</button>
+          <button onClick={exportCsv} style={btnStyle('#43A047')}>⬇ Export CSV</button>
         </div>
       </div>
 
@@ -110,7 +112,7 @@ export default function SurveyResults() {
             <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               padding: '8px 0', borderBottom: '1px solid #f5f5f5', fontSize: 14 }}>
               <span><b>{s.full_name}</b> <span style={{ color: '#888' }}>{s.email}</span></span>
-              <button onClick={() => sendReminder(s.id)} style={btn('#1565C0', true)}>Send reminder</button>
+              <button onClick={() => sendReminder(s.id)} style={btnStyle('#1565C0', true)}>Send reminder</button>
             </div>
           ))}
         </Card>
@@ -119,18 +121,4 @@ export default function SurveyResults() {
   );
 }
 
-const Card = ({ title, children, style }) => (
-  <div style={{ background:'#fff', border:'1px solid #e0e0e0', borderRadius:12, padding:20, ...style }}>
-    <h3 style={{ margin:'0 0 16px', fontSize:15, color:'#333' }}>{title}</h3>
-    {children}
-  </div>
-);
 
-const StatPill = ({ label, value, color }) => (
-  <div style={{ background:'#fff', border:'1px solid #e0e0e0', borderRadius:10, padding:'14px 20px', flex:1 }}>
-    <div style={{ fontSize:11, color:'#888', textTransform:'uppercase', marginBottom:4 }}>{label}</div>
-    <div style={{ fontSize:24, fontWeight:700, color }}>{value}</div>
-  </div>
-);
-
-const btn = (bg, small) => ({ background: bg, color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', padding: small ? '5px 12px' : '9px 18px', fontWeight: 600, fontSize: small ? 12 : 14 });
