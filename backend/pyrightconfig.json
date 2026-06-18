@@ -1,8 +1,0 @@
-{
-  "pythonVersion": "3.13",
-  "pythonPlatform": "Windows",
-  "venvPath": ".",
-  "venv": "env",
-  "include": ["app"],
-  "extraPaths": ["."]
-}
