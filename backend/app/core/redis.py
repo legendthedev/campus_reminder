@@ -1,7 +1,11 @@
 import redis.asyncio as aioredis
+from redis.exceptions import RedisError
 from app.core.config import settings
 import json
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 _redis_client: Optional[aioredis.Redis] = None
 
@@ -14,29 +18,47 @@ async def get_redis() -> aioredis.Redis:
 
 
 async def set_location(student_id: str, data: dict, ttl: int = 600):
-    r = await get_redis()
-    await r.setex(f"location:{student_id}", ttl, json.dumps(data))
+    try:
+        r = await get_redis()
+        await r.setex(f"location:{student_id}", ttl, json.dumps(data))
+    except RedisError as e:
+        logger.error(f"Redis set_location failed for student {student_id}: {e}")
 
 
 async def get_location(student_id: str) -> Optional[dict]:
-    r = await get_redis()
-    val = await r.get(f"location:{student_id}")
-    return json.loads(val) if val else None
+    try:
+        r = await get_redis()
+        val = await r.get(f"location:{student_id}")
+        return json.loads(val) if val else None
+    except RedisError as e:
+        logger.error(f"Redis get_location failed for student {student_id}: {e}")
+        return None
 
 
 async def set_analytics(week: int, data: dict):
-    r = await get_redis()
-    await r.set(f"analytics:week:{week}", json.dumps(data))
+    try:
+        r = await get_redis()
+        await r.set(f"analytics:week:{week}", json.dumps(data))
+    except RedisError as e:
+        logger.error(f"Redis set_analytics failed for week {week}: {e}")
 
 
 async def get_analytics(week: int) -> Optional[dict]:
-    r = await get_redis()
-    val = await r.get(f"analytics:week:{week}")
-    return json.loads(val) if val else None
+    try:
+        r = await get_redis()
+        val = await r.get(f"analytics:week:{week}")
+        return json.loads(val) if val else None
+    except RedisError as e:
+        logger.error(f"Redis get_analytics failed for week {week}: {e}")
+        return None
 
 
 async def close_redis():
     global _redis_client
     if _redis_client:
-        await _redis_client.aclose()
-        _redis_client = None
+        try:
+            await _redis_client.aclose()
+        except RedisError as e:
+            logger.error(f"Redis close failed: {e}")
+        finally:
+            _redis_client = None

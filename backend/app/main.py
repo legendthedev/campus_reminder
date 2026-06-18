@@ -86,7 +86,8 @@ async def seed_database():
     import uuid
     import random
 
-    async with AsyncSessionLocal() as db:
+    try:
+      async with AsyncSessionLocal() as db:
         count_result = await db.execute(select(func.count(User.id)))
         if count_result.scalar() > 0:
             return
@@ -216,3 +217,6 @@ async def seed_database():
 
         await db.commit()
         logger.info("Database seeded successfully")
+    except Exception as e:
+        logger.error(f"Database seeding failed: {e}", exc_info=True)
+        raise

@@ -7,31 +7,42 @@ export default function GeofenceConfig() {
   const [editId, setEditId] = useState(null);
   const [stats, setStats] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState(null);
 
   const load = async () => {
-    const [g, s] = await Promise.all([api.get('/api/geofence'), api.get('/api/analytics/geofence-stats')]);
-    setGeofences(g.data); setStats(s.data);
-    if (g.data?.[0]) {
-      const gf = g.data[0];
-      setForm({ name: gf.name, centre_latitude: String(gf.centre_latitude),
-        centre_longitude: String(gf.centre_longitude), radius_metres: gf.radius_metres });
-      setEditId(gf.id);
+    try {
+      const [g, s] = await Promise.all([api.get('/api/geofence'), api.get('/api/analytics/geofence-stats')]);
+      setGeofences(g.data); setStats(s.data);
+      setError(null);
+      if (g.data?.[0]) {
+        const gf = g.data[0];
+        setForm({ name: gf.name, centre_latitude: String(gf.centre_latitude),
+          centre_longitude: String(gf.centre_longitude), radius_metres: gf.radius_metres });
+        setEditId(gf.id);
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load geofence configuration.');
     }
   };
   useEffect(() => { load(); }, []);
 
   const save = async () => {
-    const payload = { ...form, centre_latitude: parseFloat(form.centre_latitude),
-      centre_longitude: parseFloat(form.centre_longitude), radius_metres: parseInt(form.radius_metres) };
-    if (editId) await api.put(`/api/geofence/${editId}`, payload);
-    else await api.post('/api/geofence', payload);
-    setSaved(true); setTimeout(() => setSaved(false), 2000); load();
+    try {
+      const payload = { ...form, centre_latitude: parseFloat(form.centre_latitude),
+        centre_longitude: parseFloat(form.centre_longitude), radius_metres: parseInt(form.radius_metres) };
+      if (editId) await api.put(`/api/geofence/${editId}`, payload);
+      else await api.post('/api/geofence', payload);
+      setSaved(true); setTimeout(() => setSaved(false), 2000); load();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save geofence.');
+    }
   };
 
   const mapsUrl = `https://maps.google.com/maps?q=${form.centre_latitude},${form.centre_longitude}&z=16&output=embed`;
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <div style={{ background: '#FFEBEE', color: '#C62828', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
       <h2 style={{ margin: '0 0 20px', color: '#1565C0' }}>Geofence configuration</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: 24 }}>

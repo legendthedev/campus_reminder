@@ -27,9 +27,12 @@ async def send_push_notification(fcm_token: str, title: str, body: str) -> bool:
             message_title=title,
             message_body=body,
         )
+        if not isinstance(result, dict):
+            logger.error(f"FCM returned unexpected response type: {type(result)}")
+            return False
         return result.get("success") == 1
     except Exception as e:
-        logger.error(f"FCM error: {e}")
+        logger.error(f"FCM push failed for token {fcm_token[:8]}…: {e}", exc_info=True)
         return False
 
 
@@ -60,13 +63,16 @@ async def broadcast_notification(db: AsyncSession, title: str, body: str, target
     else:
         try:
             course_id = uuid.UUID(target)
-            result = await db.execute(
-                select(User).join(CourseEnrollment, CourseEnrollment.student_id == User.id)
-                .where(CourseEnrollment.course_id == course_id)
-            )
-            students = result.scalars().all()
-        except Exception:
-            students = []
+        except ValueError:
+            logger.warning(f"Invalid broadcast target (not a UUID): {target}")
+            raise ValueError(f"Invalid broadcast target: {target!r} is not a valid UUID or 'all'")
+        result = await db.execute(
+            select(User).join(CourseEnrollment, CourseEnrollment.student_id == User.id)
+            .where(CourseEnrollment.course_id == course_id)
+        )
+        students = result.scalars().all()
+        if not students:
+            logger.warning(f"No students found for broadcast target course {course_id}")
 
     sent = 0
     for student in students:

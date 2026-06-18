@@ -8,32 +8,43 @@ export default function CourseManagement() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ course_code: '', course_name: '', lecturer_id: '' });
   const [editId, setEditId] = useState(null);
+  const [error, setError] = useState(null);
 
   const load = async () => {
-    const [c, u, s] = await Promise.all([api.get('/api/courses'), api.get('/api/students'), api.get('/api/students')]);
-    setCourses(c.data);
-    setStudents(s.data);
-    // fetch lecturers separately - use students endpoint filtered by role
     try {
-      const me = await api.get('/api/auth/me');
-      if (me.data.role === 'admin') {
-        // get all users by fetching known lecturers from courses
-        const lecs = c.data.map(course => ({ id: course.lecturer_id }));
-        setLecturers(lecs);
-      }
-    } catch (_) {}
+      const [c, u, s] = await Promise.all([api.get('/api/courses'), api.get('/api/students'), api.get('/api/students')]);
+      setCourses(c.data);
+      setStudents(s.data);
+      setError(null);
+      try {
+        const me = await api.get('/api/auth/me');
+        if (me.data.role === 'admin') {
+          const lecs = c.data.map(course => ({ id: course.lecturer_id }));
+          setLecturers(lecs);
+        }
+      } catch (_) {}
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load courses.');
+    }
   };
   useEffect(() => { load(); }, []);
 
   const save = async () => {
-    if (editId) await api.put(`/api/courses/${editId}`, form);
-    else await api.post('/api/courses', form);
-    setShowModal(false); setForm({ course_code: '', course_name: '', lecturer_id: '' });
-    setEditId(null); load();
+    try {
+      if (editId) await api.put(`/api/courses/${editId}`, form);
+      else await api.post('/api/courses', form);
+      setShowModal(false); setForm({ course_code: '', course_name: '', lecturer_id: '' });
+      setEditId(null); load();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save course.');
+    }
   };
 
   const del = async (id) => {
-    if (window.confirm('Delete this course?')) { await api.delete(`/api/courses/${id}`); load(); }
+    if (window.confirm('Delete this course?')) {
+      try { await api.delete(`/api/courses/${id}`); load(); }
+      catch (err) { setError(err.response?.data?.detail || 'Failed to delete course.'); }
+    }
   };
 
   const openEdit = (c) => {
@@ -43,6 +54,7 @@ export default function CourseManagement() {
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <div style={{ background: '#FFEBEE', color: '#C62828', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0, color: '#1565C0' }}>Course management</h2>
         <button onClick={() => { setForm({ course_code:'', course_name:'', lecturer_id:'' }); setEditId(null); setShowModal(true); }}

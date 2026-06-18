@@ -88,6 +88,20 @@ async def delete_course(course_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 
 @courses_router.post("/{course_id}/enroll")
 async def enroll_student(course_id: uuid.UUID, data: EnrollRequest, db: AsyncSession = Depends(get_db), current_user=Depends(require_lecturer_or_admin)):
+    result = await db.execute(select(Course).where(Course.id == course_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(404, "Course not found")
+    result = await db.execute(select(User).where(User.id == data.student_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(404, "Student not found")
+    existing = await db.execute(
+        select(CourseEnrollment).where(
+            CourseEnrollment.student_id == data.student_id,
+            CourseEnrollment.course_id == course_id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(409, "Student is already enrolled in this course")
     enroll = CourseEnrollment(student_id=data.student_id, course_id=course_id)
     db.add(enroll)
     await db.commit()
@@ -98,9 +112,10 @@ async def enroll_student(course_id: uuid.UUID, data: EnrollRequest, db: AsyncSes
 async def unenroll_student(course_id: uuid.UUID, student_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(require_lecturer_or_admin)):
     result = await db.execute(select(CourseEnrollment).where(CourseEnrollment.course_id == course_id, CourseEnrollment.student_id == student_id))
     e = result.scalar_one_or_none()
-    if e:
-        await db.delete(e)
-        await db.commit()
+    if not e:
+        raise HTTPException(404, "Enrollment not found")
+    await db.delete(e)
+    await db.commit()
     return {"message": "Unenrolled"}
 
 
@@ -274,7 +289,10 @@ async def unread_count(db: AsyncSession = Depends(get_db), current_user=Depends(
 
 @notifications_router.post("/broadcast")
 async def broadcast(data: NotificationBroadcast, db: AsyncSession = Depends(get_db), current_user=Depends(require_lecturer_or_admin)):
-    sent = await broadcast_notification(db, data.title, data.body, data.target)
+    try:
+        sent = await broadcast_notification(db, data.title, data.body, data.target)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     return {"message": f"Broadcast sent to {sent} students"}
 
 
@@ -282,9 +300,12 @@ async def broadcast(data: NotificationBroadcast, db: AsyncSession = Depends(get_
 async def mark_read(notification_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
     result = await db.execute(select(Notification).where(Notification.id == notification_id))
     n = result.scalar_one_or_none()
-    if n:
-        n.is_read = True
-        await db.commit()
+    if not n:
+        raise HTTPException(404, "Notification not found")
+    if n.recipient_id != current_user.id:
+        raise HTTPException(403, "Cannot mark another user's notification as read")
+    n.is_read = True
+    await db.commit()
     return {"message": "Marked as read"}
 
 
@@ -301,8 +322,15 @@ async def mark_all_read(db: AsyncSession = Depends(get_db), current_user=Depends
 
 @notifications_router.post("/update-fcm-token")
 async def update_fcm(data: dict, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    current_user.fcm_token = data.get("fcm_token")
-    current_user.platform = data.get("platform")
+    fcm_token = data.get("fcm_token")
+    platform = data.get("platform")
+    if not fcm_token or not isinstance(fcm_token, str):
+        raise HTTPException(422, "fcm_token is required and must be a string")
+    if platform and platform not in ("android", "ios"):
+        raise HTTPException(422, "platform must be 'android' or 'ios'")
+    current_user.fcm_token = fcm_token
+    if platform:
+        current_user.platform = platform
     await db.commit()
     return {"message": "FCM token updated"}
 
