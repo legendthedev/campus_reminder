@@ -7,13 +7,15 @@ export default function SurveyResults() {
   const [students, setStudents] = useState([]);
   const [weekNumber, setWeekNumber] = useState(1);
   const [maxWeek, setMaxWeek] = useState(1);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     Promise.all([api.get('/api/survey/responses'), api.get('/api/students'), api.get('/api/survey/current-week')])
       .then(([r, s, w]) => {
         setAllResponses(r.data); setStudents(s.data);
         setMaxWeek(w.data.week_number); setWeekNumber(w.data.week_number);
-      });
+      })
+      .catch(err => setError(err.response?.data?.detail || 'Failed to load survey data.'));
   }, []);
 
   const weekResponses = allResponses.filter(r => r.survey_week === weekNumber);
@@ -41,17 +43,22 @@ export default function SurveyResults() {
   };
 
   const sendReminder = async (studentId) => {
-    await api.post('/api/notifications/broadcast', {
-      title: 'Survey reminder', body: 'Please complete your weekly survey — it only takes 2 minutes.',
-      target: 'all',
-    });
-    alert('Reminder sent');
+    try {
+      await api.post('/api/notifications/broadcast', {
+        title: 'Survey reminder', body: 'Please complete your weekly survey — it only takes 2 minutes.',
+        target: 'all',
+      });
+      alert('Reminder sent');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send reminder.');
+    }
   };
 
   const weekOptions = Array.from({ length: maxWeek }, (_, i) => i + 1);
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <div style={{ background: '#FFEBEE', color: '#C62828', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0, color: '#1565C0' }}>Survey results</h2>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

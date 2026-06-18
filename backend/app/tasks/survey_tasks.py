@@ -32,5 +32,6 @@ async def send_weekly_survey_invite():
             await db.commit()
             logger.info(f"Survey invites sent for week {week}")
         except Exception as e:
-            logger.error(f"Survey task error: {e}")
+            logger.error(f"Survey task error: {e}", exc_info=True)
             await db.rollback()
+            raise

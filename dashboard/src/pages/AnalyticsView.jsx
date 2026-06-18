@@ -8,6 +8,7 @@ export default function AnalyticsView() {
   const [effectiveness, setEffectiveness] = useState(null);
   const [platforms, setPlatforms] = useState(null);
   const [summary, setSummary] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -18,6 +19,8 @@ export default function AnalyticsView() {
     ]).then(([t, e, p, s]) => {
       setTrend(t.data); setEffectiveness(e.data);
       setPlatforms(p.data); setSummary(s.data);
+    }).catch(err => {
+      setError(err.response?.data?.detail || 'Failed to load analytics data.');
     });
   }, []);
 
@@ -28,6 +31,7 @@ export default function AnalyticsView() {
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <div style={{ background: '#FFEBEE', color: '#C62828', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
       <h2 style={{ margin: '0 0 20px', color: '#1565C0' }}>Analytics</h2>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>

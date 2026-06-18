@@ -11,31 +11,46 @@ export default function StudentManagement() {
   const [surveys, setSurveys] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newForm, setNewForm] = useState({ full_name:'', email:'', password:'student123', student_id:'', role:'student' });
+  const [error, setError] = useState(null);
 
   const load = async () => {
-    const [s, c] = await Promise.all([api.get('/api/students'), api.get('/api/courses')]);
-    setStudents(s.data); setCourses(c.data);
+    try {
+      const [s, c] = await Promise.all([api.get('/api/students'), api.get('/api/courses')]);
+      setStudents(s.data); setCourses(c.data);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load students.');
+    }
   };
   useEffect(() => { load(); }, []);
 
   const openDetail = async (s) => {
     setSelected(s);
-    const [r, sv] = await Promise.all([
-      api.get(`/api/students/${s.id}/reminder-history`),
-      api.get(`/api/students/${s.id}/survey-responses`),
-    ]);
-    setReminders(r.data); setSurveys(sv.data);
+    try {
+      const [r, sv] = await Promise.all([
+        api.get(`/api/students/${s.id}/reminder-history`),
+        api.get(`/api/students/${s.id}/survey-responses`),
+      ]);
+      setReminders(r.data); setSurveys(sv.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load student details.');
+    }
   };
 
   const deactivate = async (id) => {
     if (window.confirm('Deactivate this student?')) {
-      await api.put(`/api/students/${id}`, { is_active: false }); load();
+      try { await api.put(`/api/students/${id}`, { is_active: false }); load(); }
+      catch (err) { setError(err.response?.data?.detail || 'Failed to deactivate student.'); }
     }
   };
 
   const createStudent = async () => {
-    await api.post('/api/auth/register', newForm);
-    setShowCreate(false); load();
+    try {
+      await api.post('/api/auth/register', newForm);
+      setShowCreate(false); load();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create student.');
+    }
   };
 
   const filtered = students.filter(s => {
@@ -48,6 +63,7 @@ export default function StudentManagement() {
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <div style={{ background: '#FFEBEE', color: '#C62828', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0, color: '#1565C0' }}>Student management</h2>
         <button onClick={() => setShowCreate(true)} style={btn('#1565C0')}>+ New student</button>

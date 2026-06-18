@@ -7,22 +7,30 @@ export default function NotificationsPanel() {
   const [preview, setPreview] = useState(false);
   const [sent, setSent] = useState(false);
   const [history, setHistory] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get('/api/courses').then(r => setCourses(r.data));
+    api.get('/api/courses').then(r => setCourses(r.data))
+      .catch(err => setError(err.response?.data?.detail || 'Failed to load courses.'));
   }, []);
 
   const send = async () => {
-    await api.post('/api/notifications/broadcast', form);
-    setSent(true);
-    setHistory(h => [{ ...form, ts: new Date().toLocaleString(), id: Date.now() }, ...h]);
-    setForm({ title: '', body: '', target: 'all' });
-    setPreview(false);
-    setTimeout(() => setSent(false), 3000);
+    try {
+      await api.post('/api/notifications/broadcast', form);
+      setSent(true);
+      setError(null);
+      setHistory(h => [{ ...form, ts: new Date().toLocaleString(), id: Date.now() }, ...h]);
+      setForm({ title: '', body: '', target: 'all' });
+      setPreview(false);
+      setTimeout(() => setSent(false), 3000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to send notification.');
+    }
   };
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <div style={{ background: '#FFEBEE', color: '#C62828', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
       <h2 style={{ margin: '0 0 20px', color: '#1565C0' }}>Broadcast notification</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>

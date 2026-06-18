@@ -13,7 +13,11 @@ async def get_user_by_email(db: AsyncSession, email: str):
 
 
 async def get_user_by_id(db: AsyncSession, user_id: str):
-    result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+    try:
+        uid = uuid.UUID(user_id)
+    except (ValueError, AttributeError):
+        return None
+    result = await db.execute(select(User).where(User.id == uid))
     return result.scalar_one_or_none()
 
 

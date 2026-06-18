@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const [todayTimetable, setTodayTimetable] = useState([]);
   const [geofence, setGeofence] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -26,6 +27,8 @@ export default function AdminDashboard() {
       setPlatforms(p.data);
       setTodayTimetable(tt.data);
       setGeofence(gf.data?.[0]);
+    }).catch(err => {
+      setError(err.response?.data?.detail || 'Failed to load dashboard data. Please try again.');
     }).finally(() => setLoading(false));
   }, []);
 
@@ -33,6 +36,7 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <AlertBanner message={error} type="error" />}
       <h2 style={{ marginTop: 0, color: '#1565C0' }}>Overview</h2>
 
       {!geofence && <AlertBanner message="No active geofence configured. Go to Geofence settings to set up the campus boundary." type="warning" />}

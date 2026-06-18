@@ -140,5 +140,6 @@ async def check_upcoming_classes():
             await db.commit()
             logger.info(f"Reminder check completed for {today_name} {window_start}–{window_end}")
         except Exception as e:
-            logger.error(f"Reminder task error: {e}")
+            logger.error(f"Reminder task error: {e}", exc_info=True)
             await db.rollback()
+            raise

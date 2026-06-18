@@ -13,23 +13,34 @@ export default function TimetableManagement() {
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
   const [activeDay, setActiveDay] = useState('monday');
+  const [error, setError] = useState(null);
 
   const load = async () => {
-    const [t, c] = await Promise.all([api.get('/api/timetable'), api.get('/api/courses')]);
-    setEntries(t.data); setCourses(c.data);
+    try {
+      const [t, c] = await Promise.all([api.get('/api/timetable'), api.get('/api/courses')]);
+      setEntries(t.data); setCourses(c.data);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to load timetable.');
+    }
   };
   useEffect(() => { load(); }, []);
 
   const save = async () => {
-    if (editId) await api.put(`/api/timetable/${editId}`, form);
-    else await api.post('/api/timetable', form);
-    setShowModal(false); setForm(emptyForm); setEditId(null);
-    load();
+    try {
+      if (editId) await api.put(`/api/timetable/${editId}`, form);
+      else await api.post('/api/timetable', form);
+      setShowModal(false); setForm(emptyForm); setEditId(null);
+      load();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save timetable entry.');
+    }
   };
 
   const del = async (id) => {
     if (window.confirm('Delete this timetable entry?')) {
-      await api.delete(`/api/timetable/${id}`); load();
+      try { await api.delete(`/api/timetable/${id}`); load(); }
+      catch (err) { setError(err.response?.data?.detail || 'Failed to delete timetable entry.'); }
     }
   };
 
@@ -45,6 +56,7 @@ export default function TimetableManagement() {
 
   return (
     <div style={{ padding: 28 }}>
+      {error && <div style={{ background: '#FFEBEE', color: '#C62828', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 14 }}>{error}</div>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0, color: '#1565C0' }}>Timetable management</h2>
         <button onClick={() => { setForm(emptyForm); setEditId(null); setShowModal(true); }} style={btnStyle('#1565C0')}>
