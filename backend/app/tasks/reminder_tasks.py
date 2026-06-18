@@ -3,7 +3,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import AsyncSessionLocal
 from app.models.timetable import TimetableEntry, DayOfWeek
 from app.models.course import Course, CourseEnrollment
-from app.models.reminder_log import ReminderLog, ReminderType, Notification, NotificationType
+from app.models.reminder_log import ReminderLog, ReminderType, StudentLocation, Notification, NotificationType
 from app.models.user import User
 from app.core.redis import get_location
 from app.services.notification_service import send_push_notification
@@ -67,13 +67,10 @@ async def check_upcoming_classes():
                     loc = await get_location(str(student.id))
                     if not loc:
                         result2 = await db.execute(
-                            select(
-                                __import__('app.models.reminder_log', fromlist=['StudentLocation']).StudentLocation
-                            ).where(
-                                __import__('app.models.reminder_log', fromlist=['StudentLocation']).StudentLocation.student_id == student.id
-                            ).order_by(
-                                __import__('app.models.reminder_log', fromlist=['StudentLocation']).StudentLocation.recorded_at.desc()
-                            ).limit(1)
+                            select(StudentLocation)
+                            .where(StudentLocation.student_id == student.id)
+                            .order_by(StudentLocation.recorded_at.desc())
+                            .limit(1)
                         )
                         loc_row = result2.scalar_one_or_none()
                         if loc_row:

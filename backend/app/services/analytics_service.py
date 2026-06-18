@@ -6,6 +6,7 @@ from app.models.user import User
 from app.models.course import Course, CourseEnrollment
 from app.models.timetable import TimetableEntry
 from app.core.redis import get_location
+from app.utils.week_helpers import get_week_for_date
 from datetime import date, datetime, timezone, timedelta
 import pandas as pd
 import numpy as np
@@ -53,12 +54,7 @@ async def get_weekly_trend(db: AsyncSession):
     reminder_counts = {}
     if rl_rows:
         rdf = pd.DataFrame([{"class_date": r.class_date} for r in rl_rows])
-        from app.services.survey_service import get_week_start_date
-        from app.core.config import settings
-        study_start = date.fromisoformat(settings.STUDY_START_DATE)
-        rdf["week"] = rdf["class_date"].apply(
-            lambda d: max(1, (d - study_start).days // 7 + 1)
-        )
+        rdf["week"] = rdf["class_date"].apply(get_week_for_date)
         reminder_counts = rdf.groupby("week").size().to_dict()
 
     trend = []

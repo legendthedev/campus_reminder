@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 from app.models.timetable import TimetableEntry, DayOfWeek
 from app.models.course import Course, CourseEnrollment
 from app.schemas.course import TimetableCreate, TimetableUpdate
+from app.utils.db_helpers import create_and_refresh, apply_updates
 from datetime import datetime, date
 import uuid
 
@@ -38,10 +39,7 @@ async def get_student_timetable(db: AsyncSession, student_id: uuid.UUID):
 
 async def create_timetable_entry(db: AsyncSession, data: TimetableCreate):
     entry = TimetableEntry(**data.model_dump())
-    db.add(entry)
-    await db.commit()
-    await db.refresh(entry)
-    return entry
+    return await create_and_refresh(db, entry)
 
 
 async def update_timetable_entry(db: AsyncSession, entry_id: uuid.UUID, data: TimetableUpdate):
@@ -49,8 +47,7 @@ async def update_timetable_entry(db: AsyncSession, entry_id: uuid.UUID, data: Ti
     entry = result.scalar_one_or_none()
     if not entry:
         return None
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(entry, k, v)
+    apply_updates(entry, data)
     await db.commit()
     await db.refresh(entry)
     return entry

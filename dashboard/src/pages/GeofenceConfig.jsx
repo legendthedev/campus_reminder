@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { Field, inputStyle } from '../components/shared/FormField';
 
 export default function GeofenceConfig() {
   const [geofences, setGeofences] = useState([]);
@@ -39,11 +40,10 @@ export default function GeofenceConfig() {
           <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, padding: 24, marginBottom: 16 }}>
             <h3 style={{ margin: '0 0 16px', fontSize: 15 }}>Campus geofence settings</h3>
             {[['Campus name','name','text'],['Centre latitude','centre_latitude','number'],['Centre longitude','centre_longitude','number']].map(([label,key,type]) => (
-              <div key={key} style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{label}</label>
+              <Field key={key} label={label}>
                 <input type={type} value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})}
-                  style={{ width: '100%', padding: '9px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 14, boxSizing: 'border-box' }} />
-              </div>
+                  style={inputStyle} />
+              </Field>
             ))}
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>

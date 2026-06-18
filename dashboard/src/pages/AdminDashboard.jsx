@@ -3,6 +3,7 @@ import api from '../services/api';
 import { StatCard } from '../components/AlertBanner';
 import { AlertBanner } from '../components/AlertBanner';
 import { PunctualityTrendChart, ReminderSplitChart, PlatformDonutChart } from '../components/SurveyChart';
+import { Card, PageLoader } from '../components/shared/Card';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -30,6 +31,8 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) return <PageLoader />;
+
+  const ChartCard = Card;
 
   return (
     <div style={{ padding: 28 }}>
@@ -90,15 +93,4 @@ export default function AdminDashboard() {
   );
 }
 
-function ChartCard({ title, children }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, padding: 20 }}>
-      <h3 style={{ margin: '0 0 16px', fontSize: 15, color: '#333' }}>{title}</h3>
-      {children}
-    </div>
-  );
-}
 
-function PageLoader() {
-  return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Loading dashboard…</div>;
-}

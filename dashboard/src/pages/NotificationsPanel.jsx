@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { Field, inputStyle } from '../components/shared/FormField';
 
 export default function NotificationsPanel() {
   const [courses, setCourses] = useState([]);
@@ -29,26 +30,25 @@ export default function NotificationsPanel() {
         <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, padding: 24 }}>
           <h3 style={{ margin: '0 0 20px', fontSize: 15 }}>Compose message</h3>
 
-          <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Title</label>
+          <Field label="Title">
             <input value={form.title} onChange={e => setForm({...form, title: e.target.value})}
               placeholder="e.g. Important announcement"
               style={inputStyle} />
-          </div>
+          </Field>
 
-          <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Message body</label>
+          <Field label="Message body">
             <textarea value={form.body} onChange={e => setForm({...form, body: e.target.value})}
               placeholder="Write your message here…" rows={4}
               style={{ ...inputStyle, resize: 'vertical' }} />
-          </div>
+          </Field>
 
           <div style={{ marginBottom: 20 }}>
-            <label style={labelStyle}>Send to</label>
+            <Field label="Send to">
             <select value={form.target} onChange={e => setForm({...form, target: e.target.value})} style={inputStyle}>
               <option value="all">All students</option>
               {courses.map(c => <option key={c.id} value={c.id}>{c.course_code} — {c.course_name}</option>)}
             </select>
+            </Field>
           </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
@@ -100,5 +100,4 @@ export default function NotificationsPanel() {
   );
 }
 
-const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: '#444' };
-const inputStyle = { width: '100%', padding: '9px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 14, boxSizing: 'border-box' };
+
