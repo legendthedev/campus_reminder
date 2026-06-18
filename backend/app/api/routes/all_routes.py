@@ -15,6 +15,7 @@ from app.schemas.course import (
     SurveySubmit, SurveyOut,
     NotificationBroadcast, NotificationOut,
 )
+from app.schemas.user import FcmTokenUpdate
 from app.services.timetable_service import (
     get_all_timetable, get_today_timetable,
     create_timetable_entry, update_timetable_entry, delete_timetable_entry,
@@ -230,6 +231,8 @@ async def all_logs(db: AsyncSession = Depends(get_db), current_user=Depends(requ
 
 @reminders_router.get("/logs/{student_id}")
 async def student_logs(student_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
+    if current_user.id != student_id and current_user.role.value not in ("admin", "lecturer"):
+        raise HTTPException(403, "Access denied")
     result = await db.execute(select(ReminderLog).where(ReminderLog.student_id == student_id).order_by(ReminderLog.sent_at.desc()))
     return result.scalars().all()
 
@@ -280,11 +283,17 @@ async def broadcast(data: NotificationBroadcast, db: AsyncSession = Depends(get_
 
 @notifications_router.put("/{notification_id}/read")
 async def mark_read(notification_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    result = await db.execute(select(Notification).where(Notification.id == notification_id))
+    result = await db.execute(
+        select(Notification).where(
+            Notification.id == notification_id,
+            Notification.recipient_id == current_user.id,
+        )
+    )
     n = result.scalar_one_or_none()
-    if n:
-        n.is_read = True
-        await db.commit()
+    if not n:
+        raise HTTPException(404, "Notification not found")
+    n.is_read = True
+    await db.commit()
     return {"message": "Marked as read"}
 
 
@@ -300,9 +309,9 @@ async def mark_all_read(db: AsyncSession = Depends(get_db), current_user=Depends
 
 
 @notifications_router.post("/update-fcm-token")
-async def update_fcm(data: dict, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
-    current_user.fcm_token = data.get("fcm_token")
-    current_user.platform = data.get("platform")
+async def update_fcm(data: FcmTokenUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
+    current_user.fcm_token = data.fcm_token
+    current_user.platform = data.platform
     await db.commit()
     return {"message": "FCM token updated"}
 
@@ -324,6 +333,8 @@ async def all_responses(db: AsyncSession = Depends(get_db), current_user=Depends
 
 @survey_router.get("/responses/{student_id}")
 async def student_responses(student_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
+    if current_user.id != student_id and current_user.role.value not in ("admin", "lecturer"):
+        raise HTTPException(403, "Access denied")
     return await get_student_surveys(db, student_id)
 
 

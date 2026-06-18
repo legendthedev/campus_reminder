@@ -35,11 +35,16 @@ async def get_student(student_id: uuid.UUID, db: AsyncSession = Depends(get_db),
 
 @router.put("/{student_id}", response_model=UserOut)
 async def update_student(student_id: uuid.UUID, data: UserUpdate, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
+    if current_user.id != student_id and current_user.role.value not in ("admin", "lecturer"):
+        raise HTTPException(status_code=403, detail="Not allowed to update another user's profile")
     result = await db.execute(select(User).where(User.id == student_id))
     student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
+    update_fields = data.model_dump(exclude_unset=True)
+    if "is_active" in update_fields and current_user.role.value not in ("admin", "lecturer"):
+        raise HTTPException(status_code=403, detail="Only staff can change active status")
+    for k, v in update_fields.items():
         setattr(student, k, v)
     await db.commit()
     await db.refresh(student)
@@ -64,12 +69,16 @@ async def student_timetable(student_id: uuid.UUID, db: AsyncSession = Depends(ge
 
 @router.get("/{student_id}/reminder-history")
 async def student_reminders(student_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
+    if current_user.id != student_id and current_user.role.value not in ("admin", "lecturer"):
+        raise HTTPException(status_code=403, detail="Access denied")
     result = await db.execute(select(ReminderLog).where(ReminderLog.student_id == student_id).order_by(ReminderLog.sent_at.desc()))
     return result.scalars().all()
 
 
 @router.get("/{student_id}/survey-responses")
 async def student_surveys(student_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)):
+    if current_user.id != student_id and current_user.role.value not in ("admin", "lecturer"):
+        raise HTTPException(status_code=403, detail="Access denied")
     return await get_student_surveys(db, student_id)
 
 

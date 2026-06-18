@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.core.security import verify_password, get_password_hash, create_access_token, create_refresh_token
 from app.schemas.user import UserCreate
 from fastapi import HTTPException, status
@@ -25,7 +25,7 @@ async def create_user(db: AsyncSession, data: UserCreate):
         full_name=data.full_name,
         email=data.email,
         password_hash=get_password_hash(data.password),
-        role=data.role,
+        role=UserRole.student,
         student_id=data.student_id,
         phone_number=data.phone_number,
     )
