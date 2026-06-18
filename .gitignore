@@ -3,3 +3,12 @@ include/
 lib/
 pyvenv.cfg
 Scripts/
+
+# Node
+node_modules/
+build/
+.env.local
+
+# PHP
+vendor/
+.env
