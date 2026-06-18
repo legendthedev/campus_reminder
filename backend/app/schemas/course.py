@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime, time, date
@@ -108,12 +108,12 @@ class CheckPositionResponse(BaseModel):
 
 # Survey schemas
 class SurveySubmit(BaseModel):
-    q1_punctuality_rating: int
-    q2_missed_classes: int
+    q1_punctuality_rating: int = Field(ge=1, le=5)
+    q2_missed_classes: int = Field(ge=0, le=50)
     q3_reminder_helpful: bool
     q4_location_preference: LocationPreference
-    q5_privacy_comfort: int
-    q6_open_feedback: Optional[str] = None
+    q5_privacy_comfort: int = Field(ge=1, le=5)
+    q6_open_feedback: Optional[str] = Field(default=None, max_length=2000)
 
 
 class SurveyOut(BaseModel):

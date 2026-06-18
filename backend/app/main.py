@@ -22,8 +22,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+_WEAK_KEYS = {"change-this-secret-key-in-production", "change-this-to-a-long-random-secret-key-in-production", ""}
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if settings.SECRET_KEY in _WEAK_KEYS:
+        logger.warning(
+            "SECRET_KEY is insecure — set a strong random value in .env before deploying to production"
+        )
     logger.info("Starting Campus Reminder System...")
     await create_tables()
     await seed_database()
@@ -47,8 +54,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS.split(","),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(auth_router)

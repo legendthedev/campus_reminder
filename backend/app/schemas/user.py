@@ -9,7 +9,6 @@ class UserCreate(BaseModel):
     full_name: str
     email: EmailStr
     password: str
-    role: UserRole = UserRole.student
     student_id: Optional[str] = None
     phone_number: Optional[str] = None
 
